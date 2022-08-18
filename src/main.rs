@@ -29,13 +29,16 @@
 extern crate image;
 
 use std::time::{Instant};
+#[allow(unused_imports)]
 use conv::*;
 use image::{Rgb, RgbImage};
 use rand::{Rng};
 #[allow(unused_imports)]
 use imageproc::drawing::draw_line_segment_mut;
+#[allow(unused_imports)]
 use imageproc::drawing::draw_hollow_rect_mut;
 use imageproc::drawing::draw_filled_rect_mut;
+#[allow(unused_imports)]
 use imageproc::drawing::draw_filled_circle_mut;
 use imageproc::rect;
 use std::collections::HashMap;
@@ -48,6 +51,8 @@ use std::fmt;
 const WIDTH: usize = 1000;
 const HEIGHT: usize = 1000;
 const MAX_HEAT: usize = 100_000;
+const MINIMUM_SIZE: usize = 1;
+const MAXIMUM_SIZE:usize = 1000;
 
 /// A location
 #[derive(PartialEq, Hash, Eq, Clone, Copy, Debug)]
@@ -140,7 +145,6 @@ impl TemperatureCache {
 	// zero, associate each with a colour: blue => 0 and red => hottest.
 	let colour_count = 8;
 	let div = samples.len() / (colour_count - 1);
-	// println!("div: {} colour count: {}", div, colour_count);
 	let mut palette: HashMap<usize, Rgb<u8>> = HashMap::new();	
 
 	// The bluest value is indexed by zero
@@ -172,7 +176,6 @@ impl TemperatureCache {
 		    ) as u8
 		]
 	    );
-	    // println!("i: {}  colour: {:?}", i, &value);
 	    palette.insert(samples[key].1, value);
 	}
 	// (d - 1) * u8::MAX
@@ -217,7 +220,6 @@ impl Rect {
 	    loc.x <= self.loc[1].x &&
 	    loc.y >= self.loc[0].y &&
 	    loc.y <= self.loc[3].y;
-	// println!("Cn: {} in {}: {}", loc, self, result);
 	result
     }
 
@@ -307,7 +309,6 @@ impl Rect {
 		Some(*c)
 	    },
 	    None => {
-		// println!("{:?}", heat_cache.palette.keys());
 		panic!("Cound not find colour for {}", temperature)
 	    },
 	};
@@ -327,7 +328,6 @@ impl Rect {
 	let dx  = x_r - 2 * pixel.x as isize;
 	let dy  = y_r - 2 * pixel.y as isize;
 	let result  = (dx * dx + dy * dy) as usize/4;
-	// println!("msd {} <-> {} == {}", self, pixel, result);	
 	result
     }
 
@@ -385,23 +385,21 @@ impl HeatSource {
 	result
     }
     // HeatSource
-    fn heat_to_colour(heat:usize) -> Rgb<u8> {
-	let colour_linear:f64 = if heat < MAX_HEAT {
-	    heat as f64 
-	}else{
-	    // println!("heat({}) >= {}.  Bad", heat, MAX_HEAT);
-	    MAX_HEAT as f64
-	} / MAX_HEAT as f64;
+    // fn heat_to_colour(heat:usize) -> Rgb<u8> {
+    // 	let colour_linear:f64 = if heat < MAX_HEAT {
+    // 	    heat as f64 
+    // 	}else{
+    // 	    MAX_HEAT as f64
+    // 	} / MAX_HEAT as f64;
 	
-	let r:u8  = (u8::MAX as f64  * colour_linear).approx().unwrap();
-	let g:u8  = 0;
-	let b:u8  = (u8::MAX as f64 - u8::MAX as f64  * colour_linear).approx().unwrap();
+    // 	let r:u8  = (u8::MAX as f64  * colour_linear).approx().unwrap();
+    // 	let g:u8  = 0;
+    // 	let b:u8  = (u8::MAX as f64 - u8::MAX as f64  * colour_linear).approx().unwrap();
 
-	let res = Rgb::from([r, g, b]);
-	// println!("heat_to_colour({}) {} res({:?})", heat, colour_linear, res);
-	res
+    // 	let res = Rgb::from([r, g, b]);
+    // 	res
 	    
-    }
+    // }
     fn new(loc:Pixel, heat:usize) -> HeatSource {
 
 	HeatSource {
@@ -417,30 +415,30 @@ impl fmt::Display for HeatSource {
     }
 }
 /// Calculate  heat for every point and output image
-fn the_hard_way(heat_sources: &Vec<HeatSource>, path: &str, width:usize, height:usize) {
-    let fp:String = format!("{}_complete.png", &path);
-    let new_path = Path::new(fp.as_str());
-    let mut image = RgbImage::new(width.try_into().unwrap(),
-				  height.try_into().unwrap());
-    for x in 0..width {
-	for y in 0..height {
-	    let mut heat:usize = 0;
-	    for hs in heat_sources.iter() {
-		heat += hs.temperature_from(x, y);
-	    }
-	    draw_filled_circle_mut(
-		&mut image,
-		(x.try_into().unwrap(), y.try_into().unwrap()), 1,
-		HeatSource::heat_to_colour(heat));
-	}
-    }
-    match image.save(new_path) {
-	Ok(()) => (),
-	Err(err) => println!("Failed to write file: {:?}", err),
-    };
+// fn the_hard_way(heat_sources: &Vec<HeatSource>, path: &str, width:usize, height:usize) {
+//     let fp:String = format!("{}_complete.png", &path);
+//     let new_path = Path::new(fp.as_str());
+//     let mut image = RgbImage::new(width.try_into().unwrap(),
+// 				  height.try_into().unwrap());
+//     for x in 0..width {
+// 	for y in 0..height {
+// 	    let mut heat:usize = 0;
+// 	    for hs in heat_sources.iter() {
+// 		heat += hs.temperature_from(x, y);
+// 	    }
+// 	    draw_filled_circle_mut(
+// 		&mut image,
+// 		(x.try_into().unwrap(), y.try_into().unwrap()), 1,
+// 		HeatSource::heat_to_colour(heat));
+// 	}
+//     }
+//     match image.save(new_path) {
+// 	Ok(()) => (),
+// 	Err(err) => eprintln!("Failed to write file: {:?}", err),
+//     };
     
 	
-}
+// }
 fn draw_image(q_o: &Vec<Rect>, path: &Path, palette:&HashMap<usize, Rgb<u8>>, heat_sources: &Vec<HeatSource>){
     let mut image = RgbImage::new(WIDTH.try_into().unwrap(),
 				  HEIGHT.try_into().unwrap());
@@ -448,8 +446,6 @@ fn draw_image(q_o: &Vec<Rect>, path: &Path, palette:&HashMap<usize, Rgb<u8>>, he
     for r in q_o {
 	let colour = r.colour.unwrap();
 	
-	// println!("Draw: {}\t{:?}", &r, &colour);
-
 	if r.height() > 0 && r.width() > 0 {
 	    draw_filled_rect_mut(
 		&mut image,
@@ -500,8 +496,6 @@ fn draw_image(q_o: &Vec<Rect>, path: &Path, palette:&HashMap<usize, Rgb<u8>>, he
 	keys.sort();
 	for k in keys.iter().rev() {
 	    let colour = palette.get(k).unwrap();
-	    // println!("palette: {}x{} {} => {:?} ph:{} pw:{}",
-	    // 	     px, py, k, &colour, ph, pw);
 
 	    draw_filled_rect_mut(
 		&mut image,
@@ -513,11 +507,11 @@ fn draw_image(q_o: &Vec<Rect>, path: &Path, palette:&HashMap<usize, Rgb<u8>>, he
 	    py += ph;
 	}	
     }else{
-	println!("No room for a palette");
+	eprintln!("No room for a palette");
     }
     match image.save(path) {
 	Ok(()) => (),
-	Err(err) => println!("Failed to write file: {:?}", err),
+	Err(err) => eprintln!("Failed to write file: {:?}", err),
     };
 }    
 
@@ -531,10 +525,10 @@ fn main() {
     } else {
         panic!("Please enter a target file path")
     };
-    // println!("Canvas: {}x{} ", WIDTH, HEIGHT);
+
     let path = &arg;
-    let minimum_size = 1;
-    let maximum_size = 25;
+    let minimum_size = MINIMUM_SIZE;
+    let maximum_size = MAXIMUM_SIZE;
     // Set the bounds 
     let area = Rect::new_wh(0, 0, WIDTH, HEIGHT, None);
 
@@ -559,11 +553,11 @@ fn main() {
     // 	//     MAX_HEAT,
     // 	// ),
     // ];
+    // for hs in heat_sources.iter() {
+    // 	println!("{}", hs);
+    // }
     let mut temperature_cache = TemperatureCache::new(&heat_sources);
     
-    for hs in heat_sources.iter() {
-	println!("{}", hs);
-    }
     println!("Starting timer");
     let now = Instant::now();
 
@@ -572,20 +566,15 @@ fn main() {
 	if r .height() == 0 || r.width() == 0{
 	    continue;
 	}
-	// print!(": {} => ", &r);
 	if r.area() <= minimum_size {
-	    // println!("Qr Mn: {}", &r);
 	    q_r.push(r);
 	}else if 
 	    !heat_sources.iter().any(|h| r.contains(Pixel{
 		x:h.loc.x, y:h.loc.y
 	    })) {
-		// println!("Qr MT: {}", &r);
 		q_r.push(r);
 	    }else{
 		let quarters = r.quarter();
-		// println!("Qr Qr: TL {} TR {} BL {} BR {}", quarters[0], &quarters
-			 // [1], &quarters[2], &quarters[3], );
 		q_i.append(&mut Vec::from(quarters));
 	    }
     }
@@ -597,7 +586,6 @@ fn main() {
 	    continue;
 	}
 	if r.area() <= minimum_size {
-	    // println!("Qo Min: \tr: {} )", &r);		  
 	    r.set_colour(&temperature_cache, &heat_sources, );
 	    q_o.push(r);
 	    // draw_image(&q_o, &path);
@@ -611,18 +599,11 @@ fn main() {
 		h1 != h3 ||
 		h1 != h4
 	    {
-		// print!("Qr Qur: \tr: {} => ", &r);		  
 		let quarters:[Rect; 4] = r.quarter();
-		// for q in quarters.iter() {
-		//     print!("{}, ", q);
-		// }
-		// println!();
-		    
 		q_r.append(&mut Vec::from(quarters));
 	    }else{
 		// All four verticies of the rectangle have the same heat
 		r.set_colour(&temperature_cache,  &heat_sources, );
-		// println!("Qo Hot: \tr: {} )", &r);		  
 		q_o.push(r);
 	    }
 	}
